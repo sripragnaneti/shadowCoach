@@ -6,7 +6,6 @@
  *  • AudioRecorder → /transcribe chunks every 5 s
  *  • Filler word detection (regex on each transcript chunk)
  *  • WPM calculation (sliding 10-second window, updated every second)
- *  • Eye contact % (from useEyeContact hook)
  *  • Answer scoring (POST /score every 30 s of accumulated speech)
  *  • Session persistence (IndexedDB on stop)
  */
