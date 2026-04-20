@@ -1,0 +1,54 @@
+/* Global Styles — Notion Light Mode */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+@import './components.css';
+
+:root {
+  --bg-main: #f7f6f3;
+  --bg-surface: #ffffff;
+  --bg-card: #f1f1ef;
+  --bg-hover: #ededeb;
+
+  --primary: #2383e2;
+  --primary-light: #e7f0fb;
+
+  --danger: #e03e3e;
+  --success: #0f7b6c;
+  --warning: #dfab01;
+
+  --text-primary: #37352f;
+  --text-secondary: #787774;
+  --text-muted: #acaba8;
+
+  --border: #e9e9e7;
+  --border-strong: #d3d1cb;
+
+  --space-unit: 0.25rem;
+  --radius-lg: 8px;
+  --radius-md: 6px;
+  --radius-sm: 3px;
+
+  --transition: all 0.15s ease;
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html,
+body {
+  width: 100%;
+  height: 100%;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  background-color: var(--bg-main);
+  color: var(--text-primary);
+  overflow: hidden;
+}
+
+#root {
+  width: 100%;
+  height: 100%;
+}
