@@ -1,4 +1,3 @@
-import React from 'react'
 import { BrowserRouter, Routes, Route } from 'react-router-dom'
 import { LivePage } from '@pages/Live'
 import { SessionsPage } from '@pages/Sessions'

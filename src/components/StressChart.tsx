@@ -1,4 +1,3 @@
-import React from 'react'
 import {
   Line,
   XAxis,
@@ -9,7 +8,7 @@ import {
   AreaChart,
   Area
 } from 'recharts'
-import type { StoredSession } from '@types/index'
+import type { StoredSession } from 'types/index'
 
 interface StressChartProps {
   session: StoredSession
@@ -29,9 +28,9 @@ export function StressChart({ session }: StressChartProps) {
     const timestamp = session.startTime + i * 1000
     
     // Find feedback around this time to simulate "stress"
-    const nearbyFeed = session.feedback.filter(f => Math.abs(f.timestamp - timestamp) < 5000)
-    const fillerStress = nearbyFeed.filter(f => f.type === 'filler').length * 20
-    const paceStress = nearbyFeed.filter(f => f.type === 'pace').length * 15
+    const nearbyFeed = session.feedback.filter((f: any) => Math.abs(f.timestamp - timestamp) < 5000)
+    const fillerStress = nearbyFeed.filter((f: any) => f.type === 'filler').length * 20
+    const paceStress = nearbyFeed.filter((f: any) => f.type === 'pace').length * 15
     
     // Baselines
     const baseWpm = session.metrics.avgWpm || 130

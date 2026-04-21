@@ -56,9 +56,9 @@ export const VideoCapture = forwardRef<VideoCaptureHandle, VideoCaptureProps>(({
     const video = e.currentTarget
     if (video.duration === Infinity) {
       video.currentTime = 1e101
-      video.ontimeupdate = function() {
-        this.ontimeupdate = null
-        this.currentTime = 0
+      video.ontimeupdate = () => {
+        video.ontimeupdate = null
+        video.currentTime = 0
       }
     }
   }

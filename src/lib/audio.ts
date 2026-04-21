@@ -3,7 +3,7 @@
  * to the backend /transcribe endpoint, calling onSegments with the result.
  */
 
-import type { TranscriptSegment } from '@types/index'
+import type { TranscriptSegment } from 'types/index'
 
 const API_BASE = import.meta.env.VITE_API_BASE ?? 'http://localhost:8000'
 const CHUNK_INTERVAL_MS = 4_000

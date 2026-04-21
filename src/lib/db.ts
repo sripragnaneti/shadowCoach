@@ -2,7 +2,7 @@
  * db.ts — IndexedDB session persistence layer.
  */
 
-import type { StoredSession } from '@types/index'
+import type { StoredSession } from 'types/index'
 
 const DB_NAME = 'shadowcoach'
 const DB_VERSION = 1

@@ -1,4 +1,4 @@
-import React, { useRef } from 'react'
+import { useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { VideoCapture, VideoCaptureHandle } from '@components/VideoCapture'
 import { AnalysisDashboard } from '@components/AnalysisDashboard'
@@ -77,7 +77,7 @@ export function LivePage() {
                 metrics={metrics} 
                 feedback={feedback} 
                 isRecording={isRecording} 
-                onSeek={(sec) => captureRef.current?.seek(sec)}
+                onSeek={(sec: number) => captureRef.current?.seek(sec)}
               />
             </div>
           </aside>

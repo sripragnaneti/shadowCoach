@@ -20,8 +20,8 @@ import type {
   WordTiming,
   LiveMetrics,
   ScoreResult,
-} from '@types/index'
-import { initialMetrics } from '@types/index'
+} from 'types/index'
+import { initialMetrics } from 'types/index'
 
 const API_BASE = import.meta.env.VITE_API_BASE ?? 'http://localhost:8000'
 
@@ -313,7 +313,7 @@ export function useSession() {
             avgWpm: currentMetrics.wpm,
             finalScore: currentMetrics.answerScore,
           },
-          feedback: currentFeedback.map((f) => ({
+          feedback: currentFeedback.map((f: any) => ({
             type: f.type,
             message: f.message,
             timestamp: f.timestamp.getTime(),

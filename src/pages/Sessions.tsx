@@ -1,7 +1,7 @@
-import React, { useEffect, useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { loadSessions, deleteSession } from '@lib/db'
-import type { StoredSession } from '@types/index'
+import type { StoredSession } from 'types/index'
 import { Calendar, Clock, Trash2, ArrowLeft, BarChart2, Video } from 'lucide-react'
 
 export function SessionsPage() {
@@ -9,7 +9,7 @@ export function SessionsPage() {
   const navigate = useNavigate()
 
   useEffect(() => {
-    loadSessions().then(s => setSessions(s.sort((a,b) => b.startTime - a.startTime)))
+    loadSessions().then((s: any[]) => setSessions(s.sort((a: any, b: any) => b.startTime - a.startTime)))
   }, [])
 
   const handleDelete = async (e: React.MouseEvent, id: string) => {
@@ -64,7 +64,7 @@ export function SessionsPage() {
           </div>
         ) : (
           <div className="session-list">
-            {sessions.map(s => (
+            {sessions.map((s: any) => (
               <div key={s.id} className="session-card" onClick={() => navigate(`/report/${s.id}`)}>
                 <div className="session-card-info">
                   <div className="session-date">

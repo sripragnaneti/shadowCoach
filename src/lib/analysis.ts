@@ -2,7 +2,7 @@
  * analysis.ts — Filler word detection and speech pace calculation.
  */
 
-import type { TranscriptSegment, WordTiming, PaceRating } from '@types/index'
+import type { TranscriptSegment, WordTiming, PaceRating } from 'types/index'
 
 // ──────────────────────────────────────────────
 // Filler word detection
@@ -20,20 +20,16 @@ export function detectFillers(text: string): string[] {
 // ──────────────────────────────────────────────
 
 export function segmentsToWords(segments: TranscriptSegment[]): WordTiming[] {
-  const words: WordTiming[] = []
-  for (const seg of segments) {
-    const segWords = seg.text.trim().split(/\s+/).filter(Boolean)
-    if (segWords.length === 0) continue
-    const wDuration = (seg.end - seg.start) / segWords.length
-    segWords.forEach((word, i) => {
-      words.push({
-        word,
-        start: seg.start + i * wDuration,
-        end: seg.start + (i + 1) * wDuration,
-      })
-    })
-  }
-  return words
+  return segments.flatMap((seg) => {
+    const words = seg.text.split(/\s+/)
+    const dur = seg.end - seg.start
+    const wordDur = dur / words.length
+    return words.map((word: string, i: number) => ({
+      word,
+      start: seg.start + i * wordDur,
+      end: seg.start + (i + 1) * wordDur,
+    }))
+  })
 }
 
 // ──────────────────────────────────────────────

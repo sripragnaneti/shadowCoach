@@ -12,8 +12,9 @@
     "moduleResolution": "bundler",
     "allowImportingTsExtensions": true,
     "resolveJsonModule": true,
-    "composite": true,
+    "noEmit": true,
     "jsx": "react-jsx",
+    "types": ["vite/client"],
 
     /* Linting */
     "strict": true,
@@ -22,22 +23,22 @@
     "noFallthroughCasesInSwitch": true,
     "noImplicitAny": true,
     "alwaysStrict": true,
-    "declaration": true,
-    "declarationMap": true,
-    "sourceMap": true,
 
     /* Path mapping */
     "baseUrl": ".",
     "paths": {
       "@/*": ["src/*"],
+      "@components": ["src/components"],
       "@components/*": ["src/components/*"],
+      "@hooks": ["src/hooks"],
       "@hooks/*": ["src/hooks/*"],
+      "@pages": ["src/pages"],
       "@pages/*": ["src/pages/*"],
+      "@lib": ["src/lib"],
       "@lib/*": ["src/lib/*"],
       "@workers/*": ["src/workers/*"],
-      "@types/*": ["src/types/*"]
+      "types/*": ["src/types/*"]
     }
   },
-  "include": ["src"],
-  "references": [{ "path": "./tsconfig.app.json" }]
+  "include": ["src"]
 }
