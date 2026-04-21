@@ -28,7 +28,6 @@ export function StressChart({ session }: StressChartProps) {
     
     // Find feedback around this time to simulate "stress"
     const nearbyFeed = session.feedback.filter((f: StoredFeedback) => Math.abs(f.timestamp - timestamp) < 5000)
-    const fillerStress = nearbyFeed.filter((f: StoredFeedback) => f.type === 'filler').length * 20
     const paceStress = nearbyFeed.filter((f: StoredFeedback) => f.type === 'pace').length * 15
     
     // Baselines
