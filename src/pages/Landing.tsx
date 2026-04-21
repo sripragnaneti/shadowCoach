@@ -181,7 +181,7 @@ export function LandingPage() {
           left: 0;
           width: 100%;
           height: 100%;
-          background: radial-gradient(circle at var(--mouse-x, 50%) var(--mouse-y, 50%), rgba(255,255,255,0.05) 0%, transparent 60%);
+          background: radial-gradient(circle at 50% 50%, rgba(255,255,255,0.05) 0%, transparent 60%);
           opacity: 0;
           transition: opacity 0.3s;
         }
