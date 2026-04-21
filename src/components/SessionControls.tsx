@@ -1,5 +1,4 @@
 import React from 'react'
-import { Play, Square } from 'lucide-react'
 
 interface SessionControlsProps {
   isRecording: boolean
