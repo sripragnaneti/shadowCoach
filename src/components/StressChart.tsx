@@ -1,5 +1,4 @@
 import {
-  Line,
   XAxis,
   YAxis,
   CartesianGrid,
@@ -8,7 +7,7 @@ import {
   AreaChart,
   Area
 } from 'recharts'
-import type { StoredSession, FeedbackData } from 'types/index'
+import type { StoredSession, StoredFeedback } from 'types/index'
 
 interface StressChartProps {
   session: StoredSession
@@ -28,20 +27,18 @@ export function StressChart({ session }: StressChartProps) {
     const timestamp = session.startTime + i * 1000
     
     // Find feedback around this time to simulate "stress"
-    const nearbyFeed = session.feedback.filter((f: FeedbackData) => Math.abs(f.timestamp - timestamp) < 5000)
-    const fillerStress = nearbyFeed.filter((f: FeedbackData) => f.type === 'filler').length * 20
-    const paceStress = nearbyFeed.filter((f: FeedbackData) => f.type === 'pace').length * 15
+    const nearbyFeed = session.feedback.filter((f: StoredFeedback) => Math.abs(f.timestamp - timestamp) < 5000)
+    const fillerStress = nearbyFeed.filter((f: StoredFeedback) => f.type === 'filler').length * 20
+    const paceStress = nearbyFeed.filter((f: StoredFeedback) => f.type === 'pace').length * 15
     
     // Baselines
     const baseWpm = session.metrics.avgWpm || 130
     const wpm = baseWpm + (Math.random() * 20 - 10) + paceStress
-    const eyeContact = Math.max(0, Math.min(100, (session.metrics.eyeContactPct || 80) + (Math.random() * 10 - 5) - fillerStress))
 
     data.push({
       time: i,
       label: `${Math.floor(i / 60)}:${(i % 60).toString().padStart(2, '0')}`,
-      wpm,
-      eyeContact
+      wpm
     })
   }
 
@@ -82,14 +79,6 @@ export function StressChart({ session }: StressChartProps) {
               strokeWidth={2}
               fillOpacity={1} 
               fill="url(#colorWpm)" 
-            />
-            <Line 
-              type="monotone" 
-              dataKey="eyeContact" 
-              name="Eye Contact %"
-              stroke="#0f7b6c" 
-              strokeWidth={2} 
-              dot={false}
             />
           </AreaChart>
         </ResponsiveContainer>

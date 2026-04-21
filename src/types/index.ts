@@ -74,6 +74,12 @@ export interface ScoreResult {
 // IndexedDB stored session
 // ──────────────────────────────────────────────
 
+export interface StoredFeedback {
+  type: string
+  message: string
+  timestamp: number
+}
+
 export interface StoredSession {
   id: string
   startTime: number
@@ -86,11 +92,7 @@ export interface StoredSession {
     avgWpm: number
     finalScore: number | null
   }
-  feedback: Array<{
-    type: string
-    message: string
-    timestamp: number
-  }>
+  feedback: StoredFeedback[]
 }
 
 
