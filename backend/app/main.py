@@ -7,6 +7,7 @@ from pydantic import BaseModel
 
 from .transcribe import transcribe_audio_file_path, stream_transcription
 from .score import score_answer
+from .interview import generate_interview_questions
 
 app = FastAPI(
     title="ShadowCoach API",
@@ -95,6 +96,16 @@ async def transcribe_audio_stream(audio: UploadFile = File(...)):
 class ScoreRequest(BaseModel):
     transcript: str
 
+class QuestionRequest(BaseModel):
+    role: str
+    resume: str
+    count: int = 5
+
+@app.post("/interview/questions")
+async def get_questions(body: QuestionRequest):
+    """Generate tailored questions from Ollama."""
+    questions = await generate_interview_questions(body.role, body.resume, body.count)
+    return {"questions": questions}
 
 @app.post("/score")
 async def score_interview_answer(body: ScoreRequest):

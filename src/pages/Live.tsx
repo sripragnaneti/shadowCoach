@@ -28,7 +28,7 @@ export function LivePage() {
     <div className="page-container">
       <header className="main-header">
         <div className="header-left">
-          <div className="brand">
+          <div className="brand" onClick={() => navigate('/')} style={{ cursor: 'pointer' }}>
             <div className="brand-dot" />
             <h1>ShadowCoach</h1>
           </div>
