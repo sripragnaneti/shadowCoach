@@ -1,5 +1,5 @@
 import React from 'react'
-import type { FeedbackData } from '@types/index'
+import { Play, Square } from 'lucide-react'
 
 interface SessionControlsProps {
   isRecording: boolean

@@ -2,12 +2,10 @@ import React, { useEffect, useState, useRef } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { getSessionById } from '@lib/db'
 import type { StoredSession } from '@types/index'
-import { StressChart } from '@components/StressChart'
 import { 
   ArrowLeft, 
   MessageSquare, 
   Target, 
-  AlertCircle, 
   CheckCircle2, 
   Quote,
   Video
@@ -36,7 +34,7 @@ export function ReportPage() {
     return () => {
       if (videoUrl) URL.revokeObjectURL(videoUrl)
     }
-  }, [id])
+  }, [id, videoUrl])
 
   if (loading) return <div className="loading-screen">Analyzing session data...</div>
   if (!session) return <div className="error-screen">Session not found.</div>

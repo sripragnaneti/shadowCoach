@@ -37,7 +37,6 @@ function PaceBadge({ pace, visible }: { pace: LiveMetrics['pace']; visible: bool
 }
 
 export function AnalysisDashboard({ metrics, feedback, isRecording, onSeek }: AnalysisDashboardProps): React.ReactNode {
-  const hasData = metrics.sessionDuration > 0
   const transcriptRef = React.useRef<HTMLDivElement>(null)
 
   // Auto-scroll transcript

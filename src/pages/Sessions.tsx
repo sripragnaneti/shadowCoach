@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { loadSessions, deleteSession } from '@lib/db'
 import type { StoredSession } from '@types/index'
-import { Calendar, Clock, Trash2, ArrowLeft, PlayCircle, BarChart2, Video } from 'lucide-react'
+import { Calendar, Clock, Trash2, ArrowLeft, BarChart2, Video } from 'lucide-react'
 
 export function SessionsPage() {
   const [sessions, setSessions] = useState<StoredSession[]>([])

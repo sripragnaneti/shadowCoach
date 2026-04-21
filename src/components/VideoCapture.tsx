@@ -1,5 +1,5 @@
 import { Square, Save, Video, Check } from 'lucide-react'
-import { ReactNode, useEffect, useState, useRef, useImperativeHandle, forwardRef } from 'react'
+import { useEffect, useState, useRef, useImperativeHandle, forwardRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 
 interface VideoCaptureProps {
@@ -7,7 +7,7 @@ interface VideoCaptureProps {
   isRecording: boolean
   onStop?: () => void
   reviewBlob?: Blob | null
-  onSave?: () => void
+  onSave?: () => Promise<boolean> | void
 }
 
 export interface VideoCaptureHandle {
@@ -28,7 +28,7 @@ export const VideoCapture = forwardRef<VideoCaptureHandle, VideoCaptureProps>(({
 
   const handleSave = async () => {
     if (onSave) {
-      const success = await (onSave as any)()
+      const success = await onSave()
       if (success) setIsSaved(true)
     }
   }

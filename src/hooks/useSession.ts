@@ -93,28 +93,6 @@ export function useSession() {
   const fullRecorderRef = useRef<MediaRecorder | null>(null)
   const [isStopping, setIsStopping] = useState(false) // Gate for saving logic during stop process
 
-  /*
-  useEffect(() => {
-    if (isEyeContactLost && isRecording) {
-      const offset = (Date.now() - sessionStartRef.current) / 1000
-      
-      // Determine specific suggestion based on context
-      let suggestion = "Try to maintain steady eye contact with the camera."
-      if (metrics.sessionDuration > 60 && eyeContactPct < 50) {
-        suggestion = "You're looking away frequently. This can signal uncertainty; try anchoring your gaze on the lens."
-      } else if (detailedMetrics.stabilityScore < 4) {
-        suggestion = "Gaze is jittery. Try to hold eye contact for at least 3-4 seconds at a time to project confidence."
-      }
-
-      setFeedback(prev => [...prev, {
-        type: 'eye_contact',
-        message: `Eye contact lost at ${Math.round(offset)}s. ${suggestion}`,
-        timestamp: new Date()
-      }])
-    }
-  }, [isEyeContactLost, isRecording, detailedMetrics.stabilityScore, eyeContactPct])
-  */
-
   // ──────────────────────────────────────────
   // Score a buffered transcript against Ollama
   // ──────────────────────────────────────────
@@ -273,7 +251,7 @@ export function useSession() {
       }
       setIsRecording(false)
     }
-  }, [handleSegments, startTracking, tick])
+  }, [handleSegments, tick])
 
   // ──────────────────────────────────────────
   // Stop session
@@ -349,7 +327,7 @@ export function useSession() {
     }
 
     return sessionStartRef.current.toString()
-  }, [feedback, metrics, stopTracking, tryScore, isStopping, isRecording, detailedMetrics])
+  }, [feedback, metrics, tryScore, isStopping, isRecording])
 
   const saveVideo = useCallback(async () => {
     if (!latestVideoBlob || !sessionStartRef.current) {
