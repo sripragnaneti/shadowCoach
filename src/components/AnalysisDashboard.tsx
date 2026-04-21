@@ -1,5 +1,5 @@
 import React from 'react'
-import type { LiveMetrics, FeedbackData } from 'types/index'
+import type { LiveMetrics, FeedbackData, TranscriptSegment } from 'types/index'
 
 interface AnalysisDashboardProps {
   metrics: LiveMetrics
@@ -84,7 +84,7 @@ export function AnalysisDashboard({ metrics, feedback, isRecording, onSeek }: An
         </div>
         <div className="live-transcript" ref={transcriptRef}>
           {metrics.segments.length > 0 ? (
-            metrics.segments.map((seg: any, i: number) => (
+            metrics.segments.map((seg: TranscriptSegment, i: number) => (
               <span 
                 key={i} 
                 className={`transcript-bit ${!isRecording ? 'seekable' : ''}`}

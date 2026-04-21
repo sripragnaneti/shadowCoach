@@ -9,7 +9,7 @@ export function SessionsPage() {
   const navigate = useNavigate()
 
   useEffect(() => {
-    loadSessions().then((s: any[]) => setSessions(s.sort((a: any, b: any) => b.startTime - a.startTime)))
+    loadSessions().then((s: StoredSession[]) => setSessions(s.sort((a: StoredSession, b: StoredSession) => b.startTime - a.startTime)))
   }, [])
 
   const handleDelete = async (e: React.MouseEvent, id: string) => {
@@ -64,7 +64,7 @@ export function SessionsPage() {
           </div>
         ) : (
           <div className="session-list">
-            {sessions.map((s: any) => (
+            {sessions.map((s: StoredSession) => (
               <div key={s.id} className="session-card" onClick={() => navigate(`/report/${s.id}`)}>
                 <div className="session-card-info">
                   <div className="session-date">

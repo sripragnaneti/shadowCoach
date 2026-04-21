@@ -1,7 +1,7 @@
 import { useEffect, useState, useRef } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { getSessionById } from '@lib/db'
-import type { StoredSession } from 'types/index'
+import type { StoredSession, FeedbackData, TranscriptSegment } from 'types/index'
 import { 
   ArrowLeft, 
   MessageSquare, 
@@ -21,7 +21,7 @@ export function ReportPage() {
 
   useEffect(() => {
     if (id) {
-      getSessionById(id).then((s: any) => {
+      getSessionById(id).then((s: StoredSession | null) => {
         setSession(s)
         setLoading(false)
         if (s?.videoBlob) {
@@ -121,7 +121,7 @@ export function ReportPage() {
               </div>
               <div className="transcript-box interactive">
                 {session.segments && session.segments.length > 0 ? (
-                  session.segments.map((seg: any, i: number) => (
+                  session.segments.map((seg: TranscriptSegment, i: number) => (
                     <span 
                       key={i} 
                       className="transcript-segment"
@@ -141,7 +141,7 @@ export function ReportPage() {
             <div className="side-section">
               <h3><Target size={18} /> Performance Insights</h3>
               <div className="insights-list">
-                {session.feedback.filter((f: any) => f.type === 'suggestion').map((f: any, i: number) => (
+                {session.feedback.filter((f: FeedbackData) => f.type === 'suggestion').map((f: FeedbackData, i: number) => (
                   <div key={i} className="insight-item">
                     <div className="insight-icon"><CheckCircle2 size={16} /></div>
                     <div className="insight-text">{f.message.replace(/^Score \d+\/10 — /, '')}</div>
@@ -159,7 +159,7 @@ export function ReportPage() {
             <div className="side-section">
               <h3><MessageSquare size={18} /> Performance Events</h3>
               <div className="mini-log">
-                {session.feedback.filter((f: any) => f.type !== 'eye_contact' && f.type !== 'suggestion').map((f: any, i: number) => (
+                {session.feedback.filter((f: FeedbackData) => f.type !== 'eye_contact' && f.type !== 'suggestion').map((f: FeedbackData, i: number) => (
                   <div key={i} className={`mini-log-item log-${f.type}`}>
                     <span className="log-time">
                       {Math.floor((f.timestamp - session.startTime) / 1000)}s

@@ -313,7 +313,7 @@ export function useSession() {
             avgWpm: currentMetrics.wpm,
             finalScore: currentMetrics.answerScore,
           },
-          feedback: currentFeedback.map((f: any) => ({
+          feedback: currentFeedback.map((f: FeedbackData) => ({
             type: f.type,
             message: f.message,
             timestamp: f.timestamp.getTime(),
