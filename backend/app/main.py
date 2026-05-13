@@ -1,140 +1,53 @@
-import os
-import tempfile
 from fastapi import FastAPI, UploadFile, File, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import StreamingResponse, JSONResponse
 from pydantic import BaseModel
+import uvicorn
+from app.parser import parse_resume_file
+from app.interview import generate_interview_questions
 
-from .transcribe import transcribe_audio_file_path, stream_transcription
-from .score import score_answer
-from .interview import generate_interview_questions
-
-app = FastAPI(
-    title="ShadowCoach API",
-    version="0.2.0",
-    description="FastAPI backend for real-time Whisper transcription and scoring.",
-)
-
-# Allow all localhost dev ports
-_raw_origins = os.environ.get(
-    "CORS_ALLOWED_ORIGINS",
-    "http://localhost:5173,http://localhost:5174,http://localhost:5175",
-)
-allowed_origins = [o.strip() for o in _raw_origins.split(",")]
+app = FastAPI(title="ShadowCoach AI Backend")
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=allowed_origins,
+    allow_origins=["*"],  # For dev, allow all. Restrict in prod.
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
-
-# ──────────────────────────────────────────────
-# Transcription endpoints
-# ──────────────────────────────────────────────
-
-ALLOWED_AUDIO_TYPES = {
-    "audio/wav",
-    "audio/mpeg",
-    "audio/mp3",
-    "audio/x-wav",
-    "audio/webm",
-    "audio/ogg",
-    "audio/webm;codecs=opus",
-}
-
-
-@app.post("/transcribe")
-async def transcribe_audio(audio: UploadFile = File(...)):
-    """Transcribe an audio chunk and return full text + timestamped segments."""
-    content_type = (audio.content_type or "").split(";")[0].strip()
-    if content_type not in ALLOWED_AUDIO_TYPES:
-        raise HTTPException(status_code=400, detail=f"Unsupported audio format: {audio.content_type}")
-
-    suffix = os.path.splitext(audio.filename or "chunk.webm")[1] or ".webm"
-    with tempfile.NamedTemporaryFile(suffix=suffix, delete=False) as tmp:
-        tmp.write(await audio.read())
-        tmp_path = tmp.name
-
-    try:
-        result = await transcribe_audio_file_path(tmp_path)
-        return JSONResponse(result)
-    finally:
-        if os.path.exists(tmp_path):
-            os.unlink(tmp_path)
-
-
-@app.post("/transcribe/stream")
-async def transcribe_audio_stream(audio: UploadFile = File(...)):
-    """Stream back word segments as SSE events while transcribing."""
-    content_type = (audio.content_type or "").split(";")[0].strip()
-    if content_type not in ALLOWED_AUDIO_TYPES:
-        raise HTTPException(status_code=400, detail=f"Unsupported audio format: {audio.content_type}")
-
-    suffix = os.path.splitext(audio.filename or "chunk.webm")[1] or ".webm"
-    with tempfile.NamedTemporaryFile(suffix=suffix, delete=False) as tmp:
-        tmp.write(await audio.read())
-        tmp_path = tmp.name
-
-    async def stream_and_cleanup():
-        try:
-            async for chunk in stream_transcription(tmp_path):
-                yield chunk
-        finally:
-            if os.path.exists(tmp_path):
-                os.unlink(tmp_path)
-
-    return StreamingResponse(stream_and_cleanup(), media_type="text/event-stream")
-
-
-# ──────────────────────────────────────────────
-# Scoring endpoint
-# ──────────────────────────────────────────────
-
-class ScoreRequest(BaseModel):
-    transcript: str
-
 class QuestionRequest(BaseModel):
     role: str
     resume: str
     count: int = 5
-
-@app.post("/interview/questions")
-async def get_questions(body: QuestionRequest):
-    """Generate tailored questions from Ollama."""
-    questions = await generate_interview_questions(body.role, body.resume, body.count)
-    return {"questions": questions}
-
-@app.post("/score")
-async def score_interview_answer(body: ScoreRequest):
-    """Send a transcript excerpt to Ollama and return score + weakness + tip."""
-    if not body.transcript.strip():
-        raise HTTPException(status_code=400, detail="Transcript is empty")
-    if len(body.transcript.split()) < 5: # Lowered threshold for Groq speed
-        raise HTTPException(status_code=422, detail="Transcript too short to score")
-
-    try:
-        result = await score_answer(body.transcript)
-        return JSONResponse(result)
-    except Exception as exc:
-        raise HTTPException(status_code=502, detail=f"Scoring error: {str(exc)}")
-
-
-@app.get("/")
-async def index():
-    return {
-        "message": "ShadowCoach API is running",
-        "docs": "/docs",
-        "health": "/health"
-    }
-
-
-# ──────────────────────────────────────────────
-# Health
-# ──────────────────────────────────────────────
+    focus: str = "balanced"
+    difficulty: str = "standard"
 
 @app.get("/health")
-async def health_check():
-    return {"status": "ok"}
+def health_check():
+    return {"status": "healthy"}
+
+@app.post("/interview/parse-resume")
+async def parse_resume(file: UploadFile = File(...)):
+    try:
+        content = await file.read()
+        text = parse_resume_file(content, file.filename)
+        return {"text": text}
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+@app.post("/interview/questions")
+def get_questions(req: QuestionRequest):
+    try:
+        questions = generate_interview_questions(
+            role=req.role,
+            resume_text=req.resume,
+            count=req.count,
+            focus=req.focus,
+            difficulty=req.difficulty
+        )
+        return {"questions": questions}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+if __name__ == "__main__":
+    uvicorn.run(app, host="0.0.0.0", port=8000)

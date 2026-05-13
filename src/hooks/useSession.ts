@@ -94,7 +94,7 @@ export function useSession() {
   const [isStopping, setIsStopping] = useState(false) // Gate for saving logic during stop process
 
   // ──────────────────────────────────────────
-  // Score a buffered transcript against Ollama
+  // Score a buffered transcript against Ollama (Mocked)
   // ──────────────────────────────────────────
   const tryScore = useCallback(async (segments: TranscriptSegment[]) => {
     if (isScoring.current) return
@@ -104,29 +104,28 @@ export function useSession() {
     isScoring.current = true
     const text = segments.map((s) => s.text).join(' ')
 
-    try {
-      const res = await fetch(`${API_BASE}/score`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ transcript: text }),
-      })
-      if (!res.ok) return
+    // Mock network request
+    setTimeout(() => {
+      const mockScore = Math.floor(Math.random() * 4) + 6 // Random score 6-9
+      const mockTips = [
+        "Great detail, but try to be a bit more concise.",
+        "Good answer! Make sure to maintain eye contact.",
+        "Consider providing a specific example using the STAR method.",
+        "Clear and confident delivery."
+      ]
+      const tip = mockTips[Math.floor(Math.random() * mockTips.length)]
 
-      const data: ScoreResult = await res.json()
-      dispatchMetrics({ type: 'SCORE', score: data.score, tip: data.tip })
+      dispatchMetrics({ type: 'SCORE', score: mockScore, tip: tip })
       setFeedback((prev) => [
         ...prev,
         {
           type: 'suggestion',
-          message: `Score ${data.score}/10 — ${data.tip}`,
+          message: `Score ${mockScore}/10 — ${tip}`,
           timestamp: new Date(),
         },
       ])
-    } catch (err) {
-      console.warn('[useSession] /score request failed:', err)
-    } finally {
       isScoring.current = false
-    }
+    }, 1000)
   }, [])
 
   // ──────────────────────────────────────────
@@ -187,16 +186,19 @@ export function useSession() {
     })
   }, [])
 
+  const sessionTypeRef = useRef<'mock' | 'practice'>('practice')
+
   // ──────────────────────────────────────────
   // Start session
   // ──────────────────────────────────────────
-  const startSession = useCallback(async () => {
+  const startSession = useCallback(async (type: 'mock' | 'practice' = 'practice') => {
     // Reset state
     dispatchMetrics({ type: 'RESET' })
     setFeedback([])
     allWordsRef.current = []
     scoreBufferRef.current = []
     scoreBufferDurRef.current = 0
+    sessionTypeRef.current = type
 
     // Get media stream
     try {
@@ -304,6 +306,7 @@ export function useSession() {
       // Persist to IndexedDB (METADATA ONLY)
         await saveSession({
           id: currentId,
+          type: sessionTypeRef.current,
           startTime: startTime,
           endTime: Date.now(),
           transcript: currentMetrics.transcript,

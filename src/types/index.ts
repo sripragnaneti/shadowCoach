@@ -82,6 +82,7 @@ export interface StoredFeedback {
 
 export interface StoredSession {
   id: string
+  type: 'mock' | 'practice'
   startTime: number
   endTime: number
   transcript: string

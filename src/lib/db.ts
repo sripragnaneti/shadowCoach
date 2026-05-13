@@ -64,3 +64,28 @@ export async function deleteSession(id: string): Promise<void> {
     tx.onerror = () => reject(tx.error)
   })
 }
+
+export async function clearSessionsByType(type: 'mock' | 'practice'): Promise<void> {
+  const db = await openDB()
+  const sessions = await loadSessions()
+  const toDelete = sessions.filter(s => s.type === type)
+  
+  const tx = db.transaction(STORE, 'readwrite')
+  const store = tx.objectStore(STORE)
+  toDelete.forEach(s => store.delete(s.id))
+  
+  return new Promise((resolve, reject) => {
+    tx.oncomplete = () => resolve()
+    tx.onerror = () => reject(tx.error)
+  })
+}
+
+export async function clearAllSessions(): Promise<void> {
+  const db = await openDB()
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction(STORE, 'readwrite')
+    tx.objectStore(STORE).clear()
+    tx.oncomplete = () => resolve()
+    tx.onerror = () => reject(tx.error)
+  })
+}

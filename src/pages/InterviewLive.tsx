@@ -1,366 +1,276 @@
-import { useState, useEffect, useCallback, useRef } from 'react'
+import { useRef, useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { useSession } from '@hooks/useSession'
 import { VideoCapture, VideoCaptureHandle } from '@components/VideoCapture'
 import { AnalysisDashboard } from '@components/AnalysisDashboard'
-import { Timer, ArrowRight, Loader2, Sparkles, Terminal } from 'lucide-react'
+import { SessionControls } from '@components/SessionControls'
+import { useSession } from '@hooks/useSession'
+import { History, LayoutDashboard, Timer, MessageSquare, ChevronRight, Play, Loader2 } from 'lucide-react'
 
 const API_BASE = import.meta.env.VITE_API_BASE ?? 'http://localhost:8000'
-
-interface InterviewConfig {
-  role: string
-  resume: string
-  questionCount: number
-  timePerQuestion: number
-}
+const SECONDS_PER_QUESTION = 60
 
 export function InterviewLive() {
   const navigate = useNavigate()
   const captureRef = useRef<VideoCaptureHandle>(null)
-  const {
-    isRecording,
-    metrics,
-    feedback,
-    videoRef,
+  const { 
+    isRecording, 
+    metrics, 
+    feedback, 
+    videoRef, 
     latestVideoBlob,
-    startSession,
+    startSession, 
     stopSession,
     saveVideo
   } = useSession()
 
-  const [config, setConfig] = useState<InterviewConfig | null>(null)
+  // Guided Interview State
+  const [isGuided, setIsGuided] = useState(false)
   const [questions, setQuestions] = useState<string[]>([])
-  const [currentIdx, setCurrentIdx] = useState(-1) // -1 is loading/prep
-  const [timeLeft, setTimeLeft] = useState(0)
-  const [loading, setLoading] = useState(true)
-  const [isFinishing, setIsFinishing] = useState(false)
+  const [currentIdx, setCurrentIdx] = useState(-1)
+  const [timeLeft, setTimeLeft] = useState(SECONDS_PER_QUESTION)
+  const [isLoading, setIsLoading] = useState(false)
 
-  // 1. Load config and fetch questions
+  // Load Guided Config
   useEffect(() => {
-    const raw = sessionStorage.getItem('interview_config')
-    if (!raw) {
+    const configRaw = sessionStorage.getItem('interview_config')
+    if (configRaw) {
+      try {
+        const config = JSON.parse(configRaw)
+        setIsGuided(true)
+        fetchQuestions(
+          config.role, 
+          config.resume, 
+          config.questionCount || 5, 
+          config.focus || 'balanced',
+          config.difficulty || 'standard'
+        )
+      } catch (e) {
+        console.error('Failed to parse interview config', e)
+        navigate('/interview-setup')
+      }
+    } else {
       navigate('/interview-setup')
-      return
     }
-    const parsed = JSON.parse(raw) as InterviewConfig
-    setConfig(parsed)
-
-    fetch(`${API_BASE}/interview/questions`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        role: parsed.role,
-        resume: parsed.resume,
-        count: parsed.questionCount
-      })
-    })
-    .then(res => res.json())
-    .then(data => {
-      setQuestions(data.questions)
-      setLoading(false)
-    })
-    .catch(err => {
-      console.error('Failed to load questions', err)
-      setQuestions(["Tell me about yourself.", "What are your strengths?", "Where do you see yourself in 5 years?"])
-      setLoading(false)
-    })
   }, [navigate])
 
-  // 2. Start the recording when questions are ready
-  const beginInterview = useCallback(async () => {
-    await startSession()
-    setCurrentIdx(0)
-    if (config) setTimeLeft(config.timePerQuestion)
-  }, [startSession, config])
-
-  // 3. Timer logic
-  useEffect(() => {
-    if (currentIdx < 0 || currentIdx >= questions.length || !isRecording) return
-
-    const timer = setInterval(() => {
-      setTimeLeft(prev => {
-        if (prev <= 1) {
-          // Time's up for this question
-          if (currentIdx < questions.length - 1) {
-            setCurrentIdx(c => c + 1)
-            return config?.timePerQuestion || 60
-          } else {
-            // Last question finished
-            handleFinish()
-            return 0
-          }
-        }
-        return prev - 1
+  const fetchQuestions = async (role: string, resume: string, count: number, focus: string, difficulty: string) => {
+    setIsLoading(true)
+    try {
+      const res = await fetch(`${API_BASE}/interview/questions`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ role, resume, count, focus, difficulty })
       })
-    }, 1000)
-
-    return () => clearInterval(timer)
-  }, [currentIdx, questions, isRecording, config])
-
-  const handleFinish = async () => {
-    setIsFinishing(true)
-    const sessionId = await stopSession()
-    if (sessionId) {
-        // Redirect to report after a short delay for saving
-        setTimeout(() => navigate(`/report/${sessionId}`), 1000)
+      if (!res.ok) throw new Error('Failed to fetch questions')
+      const data = await res.json()
+      const qs = Array.isArray(data) ? data : data.questions || []
+      setQuestions(qs)
+    } catch (err) {
+      console.error('Error fetching questions:', err)
+      setQuestions([
+        'Can you walk me through your most significant technical project?',
+        'Describe a difficult challenge you encountered and how you solved it.',
+        'Why are you interested in this specific role and our company?',
+        'How do you stay updated with the latest trends in your field?',
+        'Why should we choose you over other candidates for this position?'
+      ])
+    } finally {
+      setIsLoading(false)
     }
   }
 
-  if (loading) {
-    return (
-      <div className="interview-loading">
-        <Loader2 className="spinner" size={48} />
-        <h2>Generating Tailored Questions...</h2>
-        <p>AI is analyzing your background for high-fidelity challenges.</p>
-      </div>
-    )
+  // Timer logic for Guided Interview
+  useEffect(() => {
+    let timer: ReturnType<typeof setInterval>
+    if (isRecording && isGuided && currentIdx >= 0 && currentIdx < questions.length) {
+      timer = setInterval(() => {
+        setTimeLeft((prev) => {
+          if (prev <= 1) {
+            handleNextQuestion()
+            return SECONDS_PER_QUESTION
+          }
+          return prev - 1
+        })
+      }, 1000)
+    }
+    return () => clearInterval(timer)
+  }, [isRecording, isGuided, currentIdx, questions.length])
+
+  const handleStartGuided = async () => {
+    await startSession('mock')
+    setCurrentIdx(0)
+    setTimeLeft(SECONDS_PER_QUESTION)
   }
 
+  const handleNextQuestion = () => {
+    if (currentIdx < questions.length - 1) {
+      setCurrentIdx(prev => prev + 1)
+      setTimeLeft(SECONDS_PER_QUESTION)
+    } else {
+      handleStop()
+    }
+  }
+
+  const handleStop = async () => {
+    const id = await stopSession()
+    setCurrentIdx(-1)
+    if (id) {
+       // Redirect to report after a short delay to ensure DB persistence
+       setTimeout(() => navigate(`/report/${id}`), 1500)
+    }
+  }
+
+  const progress = questions.length > 0 ? ((Math.max(0, currentIdx) + 1) / questions.length) * 100 : 0
+
   return (
-    <div className="interview-live-container">
-      <header className="interview-nav">
-        <div className="interview-progress">
-          {questions.map((_, i) => (
-            <div key={i} className={`progress-dot ${i <= currentIdx ? 'active' : ''} ${i === currentIdx ? 'pulse' : ''}`} />
-          ))}
+    <div className="page-container">
+      <header className="main-header">
+        <div className="header-left">
+          <div className="brand" onClick={() => navigate('/')} style={{ cursor: 'pointer' }}>
+            <div className="brand-dot" />
+            <h1>ShadowCoach</h1>
+          </div>
+          <nav className="header-nav">
+            <button className="nav-link active">
+              <LayoutDashboard size={18} />
+              Guided Interview
+            </button>
+            <button className="nav-link" onClick={() => navigate('/sessions')}>
+              <History size={18} />
+              Your Sessions
+            </button>
+          </nav>
         </div>
-        <div className="interview-timer">
-          <Timer size={18} />
-          <span>{Math.floor(timeLeft / 60)}:{(timeLeft % 60).toString().padStart(2, '0')}</span>
+        <div className="header-right">
+          <div className="system-status">
+            <div className="pulse-dot" />
+            <span>AI Analyzing Live</span>
+          </div>
         </div>
       </header>
 
-      <main className="interview-layout">
-        <div className="interview-main">
-          {currentIdx === -1 ? (
-             <div className="prep-screen">
-                <Sparkles size={48} className="icon-glow" />
-                <h2>Simulation Ready</h2>
-                <p>You have {questions.length} questions. Each has {config?.timePerQuestion} seconds.</p>
-                <button className="btn btn-primary start-btn" onClick={beginInterview}>
-                  Start Simulation
-                </button>
-             </div>
-          ) : (
-            <div className="question-display">
-              <div className="q-badge">Question {currentIdx + 1} of {questions.length}</div>
-              <h2 className="current-question animate-fade-in">{questions[currentIdx]}</h2>
-            </div>
-          )}
+      <main className="content">
+        <div className="live-grid">
+          <div className="video-area">
+            {/* Guided Question Banner */}
+            {isGuided && currentIdx >= 0 && (
+              <div className="question-banner">
+                <div className="q-header">
+                  <span className="q-index">Question {currentIdx + 1} of {questions.length}</span>
+                  <div className="q-timer">
+                    <Timer size={16} className={timeLeft < 10 ? 'urgent' : ''} />
+                    <span className={timeLeft < 10 ? 'urgent' : ''}>{timeLeft}s</span>
+                  </div>
+                </div>
+                <div className="progress-bar">
+                  <div className="progress-fill" style={{ width: `${progress}%` }} />
+                </div>
+                <h2 className="current-question">{questions[currentIdx]}</h2>
+              </div>
+            )}
 
-          <div className="interview-video-wrapper">
-             <VideoCapture 
+            <div className={`panel video-panel ${currentIdx >= 0 ? 'with-question' : ''}`}>
+              <VideoCapture 
                 ref={captureRef}
-                videoRef={videoRef}
-                isRecording={isRecording}
-                onStop={handleFinish}
+                videoRef={videoRef} 
+                isRecording={isRecording} 
+                onStop={handleStop} 
                 reviewBlob={latestVideoBlob}
                 onSave={saveVideo}
-             />
+              />
+              
+              {!isRecording && isGuided && !latestVideoBlob && (
+                <div className="guided-overlay">
+                  {isLoading ? (
+                    <div className="loading-state">
+                      <Loader2 className="spin" size={40} />
+                      <h3>Tailoring your interview...</h3>
+                      <p>AI is generating custom questions based on your resume.</p>
+                    </div>
+                  ) : (
+                    <div className="ready-state">
+                      <MessageSquare size={48} className="icon-glow" />
+                      <h3>Ready for your Interview?</h3>
+                      <p>We've prepared {questions.length} tailored questions for you. You'll have {SECONDS_PER_QUESTION}s for each.</p>
+                      <button className="btn btn-primary start-guided-btn" onClick={handleStartGuided}>
+                        <Play size={20} fill="currentColor" />
+                        Start Now
+                      </button>
+                    </div>
+                  )}
+                </div>
+              )}
+              
+              {!isRecording && latestVideoBlob && (
+                 <div className="guided-overlay">
+                    <div className="loading-state">
+                       <Loader2 className="spin" size={40} />
+                       <h3>Session Completed</h3>
+                       <p>Analyzing your performance... Preparing your report.</p>
+                    </div>
+                 </div>
+              )}
+            </div>
           </div>
-        </div>
 
-        <aside className="interview-sidebar">
-          <div className="sidebar-header">
-            <Terminal size={16} />
-            <span>Real-time Biometrics</span>
-          </div>
-          <AnalysisDashboard 
-            metrics={metrics}
-            feedback={feedback}
-            isRecording={isRecording}
-            onSeek={(s) => captureRef.current?.seek(s)}
-          />
-        </aside>
+          <aside className="sidebar">
+            <div className="panel control-panel">
+              <SessionControls
+                isRecording={isRecording}
+                onStart={handleStartGuided}
+                onEnd={handleStop}
+              />
+              {isRecording && isGuided && (
+                <button className="btn btn-secondary next-q-btn" onClick={handleNextQuestion}>
+                  Next Question
+                  <ChevronRight size={18} />
+                </button>
+              )}
+            </div>
+
+            <div className="panel dashboard-panel">
+              <AnalysisDashboard 
+                metrics={metrics} 
+                feedback={feedback} 
+                isRecording={isRecording} 
+                onSeek={(sec: number) => captureRef.current?.seek(sec)}
+              />
+            </div>
+          </aside>
+        </div>
       </main>
 
       <style>{`
-        .interview-live-container {
-          width: 100%;
-          height: 100vh;
-          background: #020203;
-          color: white;
-          display: flex;
-          flex-direction: column;
-          overflow: hidden;
-        }
-
-        .interview-nav {
-          height: 60px;
-          border-bottom: 1px solid rgba(255,255,255,0.05);
-          display: flex;
-          align-items: center;
-          justify-content: space-between;
-          padding: 0 2rem;
-          background: rgba(0,0,0,0.5);
+        .question-banner {
+          background: rgba(13, 13, 15, 0.8);
+          border: 1px solid rgba(255, 255, 255, 0.1);
+          border-radius: 16px;
+          padding: 1.5rem;
+          margin-bottom: 1rem;
           backdrop-filter: blur(10px);
+          animation: slideInDown 0.5s ease-out;
         }
-
-        .interview-progress {
-          display: flex;
-          gap: 0.5rem;
-        }
-
-        .progress-dot {
-          width: 32px;
-          height: 4px;
-          background: rgba(255,255,255,0.1);
-          border-radius: 2px;
-          transition: all 0.3s;
-        }
-
-        .progress-dot.active {
-          background: var(--primary);
-        }
-
-        .progress-dot.pulse {
-          box-shadow: 0 0 10px var(--primary);
-        }
-
-        .interview-timer {
-          display: flex;
-          align-items: center;
-          gap: 0.5rem;
-          font-family: 'JetBrains Mono', monospace;
-          font-weight: 600;
-          color: var(--primary);
-          background: rgba(35, 131, 226, 0.1);
-          padding: 0.5rem 1rem;
-          border-radius: 8px;
-        }
-
-        .interview-layout {
-          flex: 1;
-          display: grid;
-          grid-template-columns: 1fr 400px;
-          overflow: hidden;
-        }
-
-        .interview-main {
-          display: flex;
-          flex-direction: column;
-          padding: 2rem;
-          gap: 2rem;
-          height: 100%;
-        }
-
-        .question-display {
-          background: rgba(255,255,255,0.03);
-          border: 1px solid rgba(255,255,255,0.05);
-          padding: 2rem;
-          border-radius: 16px;
-          text-align: center;
-          min-height: 180px;
-          display: flex;
-          flex-direction: column;
-          justify-content: center;
-          align-items: center;
-        }
-
-        .q-badge {
-          font-size: 0.75rem;
-          text-transform: uppercase;
-          color: var(--primary);
-          letter-spacing: 0.1em;
-          margin-bottom: 1rem;
-        }
-
-        .current-question {
-          font-size: 1.8rem;
-          font-weight: 700;
-          line-height: 1.4;
-          max-width: 800px;
-        }
-
-        .interview-video-wrapper {
-          flex: 1;
-          background: #000;
-          border-radius: 16px;
-          overflow: hidden;
-          border: 1px solid rgba(255,255,255,0.05);
-          position: relative;
-        }
-
-        .interview-sidebar {
-          background: #050507;
-          border-left: 1px solid rgba(255,255,255,0.05);
-          display: flex;
-          flex-direction: column;
-        }
-
-        .sidebar-header {
-          padding: 1rem;
-          display: flex;
-          align-items: center;
-          gap: 0.5rem;
-          font-size: 0.7rem;
-          color: rgba(255,255,255,0.3);
-          text-transform: uppercase;
-          letter-spacing: 0.05em;
-          border-bottom: 1px solid rgba(255,255,255,0.05);
-        }
-
-        .prep-screen {
-          flex: 1;
-          display: flex;
-          flex-direction: column;
-          align-items: center;
-          justify-content: center;
-          text-align: center;
-        }
-
-        .prep-screen h2 {
-          font-size: 2.5rem;
-          margin-top: 1.5rem;
-          margin-bottom: 1rem;
-        }
-
-        .prep-screen p {
-          color: rgba(255,255,255,0.5);
-          margin-bottom: 2.5rem;
-        }
-
-        .start-btn {
-          padding: 1rem 3rem !important;
-          font-size: 1.2rem !important;
-          font-weight: 700 !important;
-        }
-
-        .icon-glow {
-          color: var(--primary);
-          filter: drop-shadow(0 0 15px var(--primary));
-        }
-
-        .interview-loading {
-          width: 100%;
-          height: 100vh;
-          background: #020203;
-          display: flex;
-          flex-direction: column;
-          align-items: center;
-          justify-content: center;
-          color: white;
-        }
-
-        .spinner {
-          animation: spin 1s linear infinite;
-          color: var(--primary);
-          margin-bottom: 2rem;
-        }
-
-        @keyframes spin {
-          from { transform: rotate(0deg); }
-          to { transform: rotate(360deg); }
-        }
-
-        @keyframes fade-in {
-          from { opacity: 0; transform: translateY(10px); }
-          to { opacity: 1; transform: translateY(0); }
-        }
-
-        .animate-fade-in {
-          animation: fade-in 0.5s ease-out forwards;
-        }
+        .q-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; }
+        .q-index { font-size: 0.8rem; font-weight: 700; color: rgba(255,255,255,0.5); text-transform: uppercase; letter-spacing: 0.1em; }
+        .q-timer { display: flex; align-items: center; gap: 0.5rem; background: rgba(255,255,255,0.05); padding: 0.4rem 0.8rem; border-radius: 20px; font-weight: 700; font-variant-numeric: tabular-nums; }
+        .q-timer .urgent { color: #ef4444; }
+        .progress-bar { height: 4px; background: rgba(255,255,255,0.05); border-radius: 2px; margin-bottom: 1.2rem; overflow: hidden; }
+        .progress-fill { height: 100%; background: #3b82f6; transition: width 0.3s ease; }
+        .current-question { font-size: 1.4rem; font-weight: 700; margin: 0; line-height: 1.4; color: #fff; }
+        
+        .video-panel.with-question { height: calc(100vh - 380px); min-height: 400px; }
+        
+        .guided-overlay { position: absolute; inset: 0; background: rgba(0,0,0,0.8); backdrop-filter: blur(8px); display: flex; align-items: center; justify-content: center; z-index: 10; border-radius: inherit; }
+        .ready-state, .loading-state { text-align: center; max-width: 400px; padding: 2rem; }
+        .ready-state h3, .loading-state h3 { font-size: 1.8rem; margin: 1rem 0; }
+        .ready-state p, .loading-state p { color: rgba(255,255,255,0.6); margin-bottom: 2rem; line-height: 1.6; }
+        .icon-glow { color: #3b82f6; filter: drop-shadow(0 0 10px rgba(59,130,246,0.5)); }
+        .start-guided-btn { padding: 1.2rem 2.5rem !important; font-size: 1.1rem; font-weight: 800; gap: 0.8rem; box-shadow: 0 0 30px rgba(59,130,246,0.3); }
+        .next-q-btn { width: 100%; margin-top: 1rem; border: 1px solid rgba(255,255,255,0.1); gap: 0.5rem; }
+        
+        .spin { animation: spin 2s linear infinite; color: #3b82f6; }
+        @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+        @keyframes slideInDown { from { transform: translateY(-20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
       `}</style>
     </div>
   )

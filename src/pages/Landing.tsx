@@ -84,7 +84,7 @@ export function LandingPage() {
           position: relative;
           display: flex;
           flex-direction: column;
-          padding: 2rem 4rem;
+          padding: 1.5rem 3rem;
         }
 
         .landing-glow {
@@ -101,7 +101,7 @@ export function LandingPage() {
           display: flex;
           justify-content: space-between;
           align-items: center;
-          margin-bottom: 6rem;
+          margin-bottom: 4rem;
           z-index: 10;
         }
 
@@ -116,8 +116,8 @@ export function LandingPage() {
         }
 
         .hero-section {
-          max-width: 800px;
-          margin-bottom: 5rem;
+          max-width: 850px;
+          margin-bottom: 3.5rem;
           z-index: 10;
         }
 
@@ -132,11 +132,11 @@ export function LandingPage() {
           font-size: 0.75rem;
           font-weight: 600;
           color: var(--primary);
-          margin-bottom: 2rem;
+          margin-bottom: 1.5rem;
         }
 
         .hero-title {
-          font-size: 5rem;
+          font-size: 4.5rem;
           font-weight: 800;
           line-height: 1.1;
           margin-bottom: 1.5rem;
@@ -152,7 +152,7 @@ export function LandingPage() {
         .hero-subtitle {
           font-size: 1.15rem;
           color: rgba(255,255,255,0.6);
-          max-width: 500px;
+          max-width: 550px;
           line-height: 1.6;
         }
 
@@ -168,7 +168,7 @@ export function LandingPage() {
           background: rgba(255,255,255,0.03);
           border: 1px solid rgba(255,255,255,0.07);
           border-radius: 20px;
-          padding: 3rem;
+          padding: 2.5rem;
           cursor: pointer;
           transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
           position: relative;
@@ -188,7 +188,7 @@ export function LandingPage() {
 
         .option-card:hover {
           background: rgba(255,255,255,0.05);
-          transform: translateY(-8px);
+          transform: translateY(-4px);
           border-color: rgba(255,255,255,0.15);
         }
 
@@ -197,36 +197,36 @@ export function LandingPage() {
         }
 
         .icon-wrapper {
-          width: 64px;
-          height: 64px;
+          width: 48px;
+          height: 48px;
           background: rgba(255,255,255,0.05);
-          border-radius: 16px;
+          border-radius: 12px;
           display: flex;
           align-items: center;
           justify-content: center;
-          margin-bottom: 2rem;
+          margin-bottom: 1.5rem;
           color: white;
           transition: transform 0.3s ease;
         }
 
         .option-card:hover .icon-wrapper {
-          transform: scale(1.1) rotate(-5deg);
+          transform: scale(1.05) rotate(-3deg);
         }
 
         .option-card.blue .icon-wrapper { color: #2383e2; }
         .option-card.red .icon-wrapper { color: #ef4444; }
 
         .option-card h3 {
-          font-size: 1.5rem;
+          font-size: 1.25rem;
           font-weight: 700;
-          margin-bottom: 1rem;
+          margin-bottom: 0.75rem;
         }
 
         .option-card p {
           color: rgba(255,255,255,0.5);
           line-height: 1.5;
-          margin-bottom: 3rem;
-          font-size: 0.95rem;
+          margin-bottom: 2rem;
+          font-size: 0.9rem;
         }
 
         .card-footer {
@@ -238,7 +238,7 @@ export function LandingPage() {
         }
 
         .cta {
-          font-size: 0.9rem;
+          font-size: 0.8rem;
           letter-spacing: 0.05em;
           text-transform: uppercase;
         }
@@ -248,13 +248,14 @@ export function LandingPage() {
         }
 
         .option-card:hover .arrow {
-          transform: translateX(5px);
+          transform: translateX(3px);
         }
 
         .landing-footer {
           margin-top: auto;
           color: rgba(255,255,255,0.3);
-          font-size: 0.8rem;
+          font-size: 0.75rem;
+          padding-top: 1rem;
         }
 
         .brand-dot.pulse {

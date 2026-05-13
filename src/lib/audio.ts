@@ -5,7 +5,6 @@
 
 import type { TranscriptSegment } from 'types/index'
 
-const API_BASE = import.meta.env.VITE_API_BASE ?? 'http://localhost:8000'
 const CHUNK_INTERVAL_MS = 4_000
 
 export class AudioRecorder {
@@ -85,37 +84,17 @@ export class AudioRecorder {
   }
 
   private async sendChunk(blob: Blob, offset: number) {
-    const formData = new FormData()
-    formData.append('audio', new File([blob], `chunk_${Date.now()}.webm`, { type: blob.type }))
+    // Mocking transcription
+    setTimeout(() => {
+      const mockWords = ['like', 'um', 'really', 'good', 'experience', 'building', 'scalable', 'systems']
+      const mockText = mockWords.sort(() => 0.5 - Math.random()).slice(0, 4).join(' ') + ' '
 
-    try {
-      const res = await fetch(`${API_BASE}/transcribe`, {
-        method: 'POST',
-        body: formData,
-      })
-      if (!res.ok) return
-
-      const data = await res.json()
-      const segments: TranscriptSegment[] = (data.segments ?? []).map(
-        (s: TranscriptSegment) => ({
-          start: s.start + offset,
-          end: s.end + offset,
-          text: s.text,
-        }),
-      )
-      
-      if (segments.length > 0) {
-        this.onSegments(segments)
-      } else if (data.text && data.text.length > 1) {
-        this.onSegments([{
-          start: offset,
-          end: offset + (CHUNK_INTERVAL_MS / 1000),
-          text: data.text
-        }])
-      }
-    } catch (err) {
-      console.warn('[AudioRecorder] transcription request failed:', err)
-    }
+      this.onSegments([{
+        start: offset,
+        end: offset + (CHUNK_INTERVAL_MS / 1000),
+        text: mockText
+      }])
+    }, 500)
   }
 }
 
