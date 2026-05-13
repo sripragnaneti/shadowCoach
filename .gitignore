@@ -8,7 +8,6 @@ backend/.venv
 *.swp
 .idea/
 .vscode/settings.json
-*.md
 *.pyc
 __pycache__/
 .gemini/
